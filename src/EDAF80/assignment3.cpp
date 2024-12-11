@@ -20,11 +20,11 @@
 
 edaf80::Assignment3::Assignment3(WindowManager& windowManager) :
 	mCamera(0.5f * glm::half_pi<float>(),
-	        static_cast<float>(config::resolution_x) / static_cast<float>(config::resolution_y),
-	        0.01f, 1000.0f),
+		static_cast<float>(config::resolution_x) / static_cast<float>(config::resolution_y),
+		0.01f, 1000.0f),
 	inputHandler(), mWindowManager(windowManager), window(nullptr)
 {
-	WindowManager::WindowDatum window_datum{ inputHandler, mCamera, config::resolution_x, config::resolution_y, 0, 0, 0, 0};
+	WindowManager::WindowDatum window_datum{ inputHandler, mCamera, config::resolution_x, config::resolution_y, 0, 0, 0, 0 };
 
 	window = mWindowManager.CreateGLFWWindow("EDAF80: Assignment 3", window_datum, config::msaa_rate);
 	if (window == nullptr) {
@@ -51,50 +51,68 @@ edaf80::Assignment3::run()
 	ShaderProgramManager program_manager;
 	GLuint fallback_shader = 0u;
 	program_manager.CreateAndRegisterProgram("Fallback",
-	                                         { { ShaderType::vertex, "common/fallback.vert" },
-	                                           { ShaderType::fragment, "common/fallback.frag" } },
-	                                         fallback_shader);
+		{ { ShaderType::vertex, "common/fallback.vert" },
+		  { ShaderType::fragment, "common/fallback.frag" } },
+		fallback_shader);
 	if (fallback_shader == 0u) {
 		LogError("Failed to load fallback shader");
 		return;
 	}
 
+	GLuint skybox_shader = 0u;
+	program_manager.CreateAndRegisterProgram("Skybox",
+		{ {	ShaderType::vertex, "EDAF80/skybox.vert" },
+		  { ShaderType::fragment, "EDAF80/skybox.frag" } },
+		skybox_shader);
+
+	if (skybox_shader == 0u)
+		LogError("Failed to load skybox shader");
+
+	GLuint phong_shader = 0u;
+	program_manager.CreateAndRegisterProgram("Phong",
+		{ {	ShaderType::vertex, "EDAF80/phong.vert" },
+		  { ShaderType::fragment, "EDAF80/phong.frag" } },
+		phong_shader);
+
+	if (phong_shader == 0u)
+		LogError("Fail to load phong shader");
+
 	GLuint diffuse_shader = 0u;
 	program_manager.CreateAndRegisterProgram("Diffuse",
-	                                         { { ShaderType::vertex, "EDAF80/diffuse.vert" },
-	                                           { ShaderType::fragment, "EDAF80/diffuse.frag" } },
-	                                         diffuse_shader);
+		{ { ShaderType::vertex, "EDAF80/diffuse.vert" },
+		  { ShaderType::fragment, "EDAF80/diffuse.frag" } },
+		diffuse_shader);
 	if (diffuse_shader == 0u)
 		LogError("Failed to load diffuse shader");
 
 	GLuint normal_shader = 0u;
 	program_manager.CreateAndRegisterProgram("Normal",
-	                                         { { ShaderType::vertex, "EDAF80/normal.vert" },
-	                                           { ShaderType::fragment, "EDAF80/normal.frag" } },
-	                                         normal_shader);
+		{ { ShaderType::vertex, "EDAF80/normal.vert" },
+		  { ShaderType::fragment, "EDAF80/normal.frag" } },
+		normal_shader);
 	if (normal_shader == 0u)
 		LogError("Failed to load normal shader");
 
 	GLuint texcoord_shader = 0u;
 	program_manager.CreateAndRegisterProgram("Texture coords",
-	                                         { { ShaderType::vertex, "EDAF80/texcoord.vert" },
-	                                           { ShaderType::fragment, "EDAF80/texcoord.frag" } },
-	                                         texcoord_shader);
+		{ { ShaderType::vertex, "EDAF80/texcoord.vert" },
+		  { ShaderType::fragment, "EDAF80/texcoord.frag" } },
+		texcoord_shader);
 	if (texcoord_shader == 0u)
 		LogError("Failed to load texcoord shader");
 
 	auto light_position = glm::vec3(-2.0f, 4.0f, 2.0f);
-	auto const set_uniforms = [&light_position](GLuint program){
+	auto const set_uniforms = [&light_position](GLuint program) {
 		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
-	};
+		};
 
 	bool use_normal_mapping = false;
 	auto camera_position = mCamera.mWorld.GetTranslation();
-	auto const phong_set_uniforms = [&use_normal_mapping,&light_position,&camera_position](GLuint program){
+	auto const phong_set_uniforms = [&use_normal_mapping, &light_position, &camera_position](GLuint program) {
 		glUniform1i(glGetUniformLocation(program, "use_normal_mapping"), use_normal_mapping ? 1 : 0);
 		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
 		glUniform3fv(glGetUniformLocation(program, "camera_position"), 1, glm::value_ptr(camera_position));
-	};
+		};
 
 
 	//
@@ -106,9 +124,19 @@ edaf80::Assignment3::run()
 		return;
 	}
 
+	GLuint cubeMap = bonobo::loadTextureCubeMap(
+		config::resources_path("cubemaps/NissiBeach2/posx.jpg"),
+		config::resources_path("cubemaps/NissiBeach2/negx.jpg"),
+		config::resources_path("cubemaps/NissiBeach2/posy.jpg"),
+		config::resources_path("cubemaps/NissiBeach2/negy.jpg"),
+		config::resources_path("cubemaps/NissiBeach2/posz.jpg"),
+		config::resources_path("cubemaps/NissiBeach2/negz.jpg")
+	);
+
 	Node skybox;
 	skybox.set_geometry(skybox_shape);
-	skybox.set_program(&fallback_shader, set_uniforms);
+	skybox.set_program(&skybox_shader, set_uniforms);
+	skybox.add_texture("cubemap", cubeMap, GL_TEXTURE_CUBE_MAP);
 
 	auto demo_shape = parametric_shapes::createSphere(1.5f, 40u, 40u);
 	if (demo_shape.vao == 0u) {
@@ -125,8 +153,15 @@ edaf80::Assignment3::run()
 	Node demo_sphere;
 	demo_sphere.set_geometry(demo_shape);
 	demo_sphere.set_material_constants(demo_material);
-	demo_sphere.set_program(&fallback_shader, phong_set_uniforms);
+	demo_sphere.set_program(&phong_shader, phong_set_uniforms);
 
+	GLuint diffuse_texture = bonobo::loadTexture2D(config::resources_path("textures/leather_red_02_coll1_2k.jpg"));
+	GLuint specular_texture = bonobo::loadTexture2D(config::resources_path("textures/leather_red_02_rough_2k.jpg"));
+	GLuint normal_texture = bonobo::loadTexture2D(config::resources_path("textures/leather_red_02_nor_2k.jpg"));
+
+	demo_sphere.add_texture("diffuse_texture", diffuse_texture, GL_TEXTURE_2D);
+	demo_sphere.add_texture("specular_texture", specular_texture, GL_TEXTURE_2D);
+	demo_sphere.add_texture("normal_texture", normal_texture, GL_TEXTURE_2D);
 
 	glClearDepthf(1.0f);
 	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -168,9 +203,9 @@ edaf80::Assignment3::run()
 			shader_reload_failed = !program_manager.ReloadAllPrograms();
 			if (shader_reload_failed)
 				tinyfd_notifyPopup("Shader Program Reload Error",
-				                   "An error occurred while reloading shader programs; see the logs for details.\n"
-				                   "Rendering is suspended until the issue is solved. Once fixed, just reload the shaders again.",
-				                   "error");
+					"An error occurred while reloading shader programs; see the logs for details.\n"
+					"Rendering is suspended until the issue is solved. Once fixed, just reload the shaders again.",
+					"error");
 		}
 		if (inputHandler.GetKeycodeState(GLFW_KEY_F3) & JUST_RELEASED)
 			show_logs = !show_logs;
@@ -198,8 +233,10 @@ edaf80::Assignment3::run()
 		glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 		bonobo::changePolygonMode(polygon_mode);
 
-
+		skybox.get_transform().SetTranslate(mCamera.mWorld.GetTranslation());
+		glDisable(GL_DEPTH_TEST);
 		skybox.render(mCamera.GetWorldToClipMatrix());
+		glEnable(GL_DEPTH_TEST);
 		demo_sphere.render(mCamera.GetWorldToClipMatrix());
 
 
@@ -259,7 +296,8 @@ int main()
 	try {
 		edaf80::Assignment3 assignment3(framework.GetWindowManager());
 		assignment3.run();
-	} catch (std::runtime_error const& e) {
+	}
+	catch (std::runtime_error const& e) {
 		LogError(e.what());
 	}
 }

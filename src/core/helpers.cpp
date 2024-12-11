@@ -151,7 +151,7 @@ bonobo::loadObjects(std::string const& filename)
 		material_data& constants = material_constants[i];
 		auto const material = assimp_scene->mMaterials[i];
 
-		auto const process_texture = [&bindings,&material,i,&parent_folder,&texture_count](aiTextureType type, std::string const& type_as_str, std::string const& name){
+		auto const process_texture = [&bindings, &material, i, &parent_folder, &texture_count](aiTextureType type, std::string const& type_as_str, std::string const& name) {
 			if (material->GetTextureCount(type)) {
 				auto const texture_start_time = std::chrono::high_resolution_clock::now();
 
@@ -171,10 +171,10 @@ bonobo::loadObjects(std::string const& filename)
 
 				auto const texture_end_time = std::chrono::high_resolution_clock::now();
 				LogTrivia("│ %s Texture \"%s\" loaded in %.3f ms",
-				          bindings.size() == 1 ? "┌" : "├", path.C_Str(),
-				          std::chrono::duration<float, std::milli>(texture_end_time - texture_start_time).count());
+					bindings.size() == 1 ? "┌" : "├", path.C_Str(),
+					std::chrono::duration<float, std::milli>(texture_end_time - texture_start_time).count());
 			}
-		};
+			};
 
 		aiColor3D color;
 
@@ -190,15 +190,15 @@ bonobo::loadObjects(std::string const& filename)
 		material->Get(AI_MATKEY_REFRACTI, constants.indexOfRefraction);
 		material->Get(AI_MATKEY_OPACITY, constants.opacity);
 
-		process_texture(aiTextureType_DIFFUSE,  "diffuse",  "diffuse_texture");
+		process_texture(aiTextureType_DIFFUSE, "diffuse", "diffuse_texture");
 		process_texture(aiTextureType_SPECULAR, "specular", "specular_texture");
-		process_texture(aiTextureType_NORMALS,  "normals",  "normals_texture");
-		process_texture(aiTextureType_OPACITY,  "opacity",  "opacity_texture");
+		process_texture(aiTextureType_NORMALS, "normals", "normals_texture");
+		process_texture(aiTextureType_OPACITY, "opacity", "opacity_texture");
 
 		auto const material_end_time = std::chrono::high_resolution_clock::now();
 		LogTrivia("│ %s Material \"%s\" loaded in %.3f ms",
-		          bindings.empty() ? "╺" : "┕", material->GetName().C_Str(),
-		          std::chrono::duration<float, std::milli>(material_end_time - material_start_time).count());
+			bindings.empty() ? "╺" : "┕", material->GetName().C_Str(),
+			std::chrono::duration<float, std::milli>(material_end_time - material_start_time).count());
 	}
 	auto const materials_end_time = std::chrono::high_resolution_clock::now();
 
@@ -213,9 +213,9 @@ bonobo::loadObjects(std::string const& filename)
 			LogError("Unsupported mesh \"%s\": has no faces", assimp_object_mesh->mName.C_Str());
 			continue;
 		}
-		if ((assimp_object_mesh->mPrimitiveTypes & ~static_cast<uint32_t>(aiPrimitiveType_POINT | aiPrimitiveType_NGONEncodingFlag))    != 0u
-		 && (assimp_object_mesh->mPrimitiveTypes & ~static_cast<uint32_t>(aiPrimitiveType_LINE | aiPrimitiveType_NGONEncodingFlag))     != 0u
-		 && (assimp_object_mesh->mPrimitiveTypes & ~static_cast<uint32_t>(aiPrimitiveType_TRIANGLE | aiPrimitiveType_NGONEncodingFlag)) != 0u) {
+		if ((assimp_object_mesh->mPrimitiveTypes & ~static_cast<uint32_t>(aiPrimitiveType_POINT | aiPrimitiveType_NGONEncodingFlag)) != 0u
+			&& (assimp_object_mesh->mPrimitiveTypes & ~static_cast<uint32_t>(aiPrimitiveType_LINE | aiPrimitiveType_NGONEncodingFlag)) != 0u
+			&& (assimp_object_mesh->mPrimitiveTypes & ~static_cast<uint32_t>(aiPrimitiveType_TRIANGLE | aiPrimitiveType_NGONEncodingFlag)) != 0u) {
 			LogError("Unsupported mesh \"%s\": uses multiple primitive types", assimp_object_mesh->mName.C_Str());
 			continue;
 		}
@@ -254,11 +254,11 @@ bonobo::loadObjects(std::string const& filename)
 		auto const binormals_size = assimp_object_mesh->HasTangentsAndBitangents() ? vertices_size : 0u;
 
 		auto const bo_size = static_cast<GLsizeiptr>(vertices_size
-		                                            +normals_size
-		                                            +texcoords_size
-		                                            +tangents_size
-		                                            +binormals_size
-		                                            );
+			+ normals_size
+			+ texcoords_size
+			+ tangents_size
+			+ binormals_size
+			);
 		glGenBuffers(1, &object.bo);
 		assert(object.bo != 0u);
 		glBindBuffer(GL_ARRAY_BUFFER, object.bo);
@@ -330,27 +330,27 @@ bonobo::loadObjects(std::string const& filename)
 
 		std::string attributes = assimp_object_mesh->HasNormals() ? "normals" : "";
 		if (!attributes.empty())
-		  attributes += " | ";
+			attributes += " | ";
 		if (assimp_object_mesh->HasTangentsAndBitangents())
-		  attributes += "tangents&bitangents";
+			attributes += "tangents&bitangents";
 		if (!attributes.empty())
-		  attributes += " | ";
+			attributes += " | ";
 		if (assimp_object_mesh->HasTextureCoords(0))
-		  attributes += "texture coordinates";
+			attributes += "texture coordinates";
 		LogTrivia("│ %s Mesh \"%s\" loaded with attributes [%s] in %.3f ms",
-		          (assimp_scene->mNumMeshes == 1u) ? "╶" : (j == 0 ? "┌" : (j == assimp_scene->mNumMeshes - 1 ? "└" : "├")),
-		          assimp_object_mesh->mName.C_Str(), attributes.c_str(),
-		          std::chrono::duration<float, std::milli>(mesh_end_time - mesh_start_time).count());
+			(assimp_scene->mNumMeshes == 1u) ? "╶" : (j == 0 ? "┌" : (j == assimp_scene->mNumMeshes - 1 ? "└" : "├")),
+			assimp_object_mesh->mName.C_Str(), attributes.c_str(),
+			std::chrono::duration<float, std::milli>(mesh_end_time - mesh_start_time).count());
 	}
 	auto const meshes_end_time = std::chrono::high_resolution_clock::now();
 
 	auto const scene_end_time = std::chrono::high_resolution_clock::now();
 	LogInfo("┕ Scene loaded in %.3f s: %u textures loaded in %.3f s and %zu meshes in %.3f s",
-	        std::chrono::duration<float>(scene_end_time - scene_start_time).count(),
-	        texture_count,
-	        std::chrono::duration<float>(materials_end_time - materials_start_time).count(),
-	        objects.size(),
-	        std::chrono::duration<float>(meshes_end_time - meshes_start_time).count());
+		std::chrono::duration<float>(scene_end_time - scene_start_time).count(),
+		texture_count,
+		std::chrono::duration<float>(materials_end_time - materials_start_time).count(),
+		objects.size(),
+		std::chrono::duration<float>(meshes_end_time - meshes_start_time).count());
 
 	return objects;
 }
@@ -402,16 +402,16 @@ bonobo::loadTexture2D(std::string const& filename, bool generate_mipmap)
 
 GLuint
 bonobo::loadTextureCubeMap(std::string const& posx, std::string const& negx,
-                           std::string const& posy, std::string const& negy,
-                           std::string const& posz, std::string const& negz,
-                           bool generate_mipmap)
+	std::string const& posy, std::string const& negy,
+	std::string const& posz, std::string const& negz,
+	bool generate_mipmap)
 {
 	GLuint texture = 0u;
 	// Create an OpenGL texture object. Similarly to `glGenVertexArrays()`
 	// and `glGenBuffers()` that were used in assignment 2,
 	// `glGenTextures()` can create `n` texture objects at once. Here we
 	// only one texture object that will contain our whole cube map.
-	glGenTextures(1, /*! \todo fill me */nullptr);
+	glGenTextures(1, /*! \todo fill me */&texture);
 	assert(texture != 0u);
 
 	// Similarly to vertex arrays and buffers, we first need to bind the
@@ -438,31 +438,87 @@ bonobo::loadTextureCubeMap(std::string const& posx, std::string const& negx,
 	// image files and return a `std::vector<std::uint8_t>` containing all the
 	// texels.
 	std::uint32_t width, height;
-	auto data = getTextureData(negx, width, height, false);
-	if (data.empty()) {
-		glDeleteTextures(1, &texture);
-		return 0u;
+	{ // negative x
+		auto data = getTextureData(negx, width, height, false);
+		if (data.empty()) {
+			glDeleteTextures(1, &texture);
+			return 0u;
+		}
+		// With all the texels available on the CPU, we now want to push them
+		// to the GPU: this is done using `glTexImage2D()` (among others). You
+		// might have thought that the target used here would be the same as
+		// the one passed to `glBindTexture()` or `glTexParameteri()`, similar
+		// to what is done `bonobo::loadTexture2D()`. However, we want to fill
+		// in a cube map, which has six different faces, so instead we specify
+		// as the target the face we want to fill in. In this case, we will
+		// start by filling the face sitting on the negative side of the
+		// x-axis by specifying GL_TEXTURE_CUBE_MAP_NEGATIVE_X.
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
+			/* mipmap level, you'll see that in EDAN35 */0,
+			/* how are the components internally stored */GL_RGBA,
+			/* the width of the cube map's face */static_cast<GLsizei>(width),
+			/* the height of the cube map's face */static_cast<GLsizei>(height),
+			/* must always be 0 */0,
+			/* the format of the pixel data: which components are available */GL_RGBA,
+			/* the type of each component */GL_UNSIGNED_BYTE,
+			/* the pointer to the actual data on the CPU */reinterpret_cast<GLvoid const*>(data.data()));
 	}
-	// With all the texels available on the CPU, we now want to push them
-	// to the GPU: this is done using `glTexImage2D()` (among others). You
-	// might have thought that the target used here would be the same as
-	// the one passed to `glBindTexture()` or `glTexParameteri()`, similar
-	// to what is done `bonobo::loadTexture2D()`. However, we want to fill
-	// in a cube map, which has six different faces, so instead we specify
-	// as the target the face we want to fill in. In this case, we will
-	// start by filling the face sitting on the negative side of the
-	// x-axis by specifying GL_TEXTURE_CUBE_MAP_NEGATIVE_X.
-	glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
-	             /* mipmap level, you'll see that in EDAN35 */0,
-	             /* how are the components internally stored */GL_RGBA,
-	             /* the width of the cube map's face */static_cast<GLsizei>(width),
-	             /* the height of the cube map's face */static_cast<GLsizei>(height),
-	             /* must always be 0 */0,
-	             /* the format of the pixel data: which components are available */GL_RGBA,
-	             /* the type of each component */GL_UNSIGNED_BYTE,
-	             /* the pointer to the actual data on the CPU */reinterpret_cast<GLvoid const*>(data.data()));
 
 	//! \todo repeat now the texture filling for the 5 remaining faces
+	{ // positive x
+		auto data = getTextureData(posx, width, height, false);
+		if (data.empty()) {
+			glDeleteTextures(1, &texture);
+			return 0u;
+		}
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGBA,
+			static_cast<GLsizei>(width), static_cast<GLsizei>(height), 0,
+			GL_RGBA, GL_UNSIGNED_BYTE, reinterpret_cast<GLvoid const*>(data.data()));
+	}
+
+	{ // negative y
+		auto data = getTextureData(negy, width, height, false);
+		if (data.empty()) {
+			glDeleteTextures(1, &texture);
+			return 0u;
+		}
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGBA,
+			static_cast<GLsizei>(width), static_cast<GLsizei>(height), 0,
+			GL_RGBA, GL_UNSIGNED_BYTE, reinterpret_cast<GLvoid const*>(data.data()));
+	}
+
+	{ // positive y
+		auto data = getTextureData(posy, width, height, false);
+		if (data.empty()) {
+			glDeleteTextures(1, &texture);
+			return 0u;
+		}
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGBA,
+			static_cast<GLsizei>(width), static_cast<GLsizei>(height), 0,
+			GL_RGBA, GL_UNSIGNED_BYTE, reinterpret_cast<GLvoid const*>(data.data()));
+	}
+
+	{ // negative z
+		auto data = getTextureData(negz, width, height, false);
+		if (data.empty()) {
+			glDeleteTextures(1, &texture);
+			return 0u;
+		}
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGBA,
+			static_cast<GLsizei>(width), static_cast<GLsizei>(height), 0,
+			GL_RGBA, GL_UNSIGNED_BYTE, reinterpret_cast<GLvoid const*>(data.data()));
+	}
+
+	{ // positive z
+		auto data = getTextureData(posz, width, height, false);
+		if (data.empty()) {
+			glDeleteTextures(1, &texture);
+			return 0u;
+		}
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGBA,
+			static_cast<GLsizei>(width), static_cast<GLsizei>(height), 0,
+			GL_RGBA, GL_UNSIGNED_BYTE, reinterpret_cast<GLvoid const*>(data.data()));
+	}
 
 	if (generate_mipmap)
 		// Generate the mipmap hierarchy; wait for EDAN35 to understand
@@ -498,12 +554,12 @@ bonobo::displayTexture(glm::vec2 const& lower_left, glm::vec2 const& upper_right
 {
 	auto const relative_to_absolute = [](float coord, int size) {
 		return static_cast<GLint>((coord + 1.0f) / 2.0f * size);
-	};
+		};
 	auto const viewport_origin = glm::ivec2(relative_to_absolute(lower_left.x, window_size.x),
-	                                        relative_to_absolute(lower_left.y, window_size.y));
+		relative_to_absolute(lower_left.y, window_size.y));
 	auto const viewport_size = glm::ivec2(relative_to_absolute(upper_right.x, window_size.x),
-	                                      relative_to_absolute(upper_right.y, window_size.y))
-	                         - viewport_origin;
+		relative_to_absolute(upper_right.y, window_size.y))
+		- viewport_origin;
 
 	glViewport(viewport_origin.x, viewport_origin.y, viewport_size.x, viewport_size.y);
 	glUseProgram(local::fullscreen_shader);
@@ -525,12 +581,12 @@ bonobo::displayTexture(glm::vec2 const& lower_left, glm::vec2 const& upper_right
 GLuint
 bonobo::createFBO(std::vector<GLuint> const& color_attachments, GLuint depth_attachment)
 {
-	auto const attach = [](GLenum attach_point, GLuint attachment){
+	auto const attach = [](GLenum attach_point, GLuint attachment) {
 		glFramebufferTexture2D(GL_FRAMEBUFFER, attach_point, GL_TEXTURE_2D, attachment, 0);
 		auto const status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 		if (status != GL_FRAMEBUFFER_COMPLETE)
 			LogError("Failed to attach %u at %u", attachment, attach_point);
-	};
+		};
 
 	GLuint fbo = 0u;
 	glGenFramebuffers(1, &fbo);
@@ -546,7 +602,7 @@ bonobo::createFBO(std::vector<GLuint> const& color_attachments, GLuint depth_att
 }
 
 GLuint
-bonobo::createSampler(std::function<void (GLuint)> const& setup)
+bonobo::createSampler(std::function<void(GLuint)> const& setup)
 {
 	GLuint sampler = 0u;
 	glGenSamplers(1, &sampler);
@@ -591,8 +647,8 @@ bonobo::uiSelectCullMode(std::string const& label, enum cull_mode_t& cull_mode) 
 {
 	auto cull_mode_index = static_cast<int>(cull_mode);
 	bool was_modified = ImGui::Combo(label.c_str(), &cull_mode_index,
-	                                 local::cull_mode_labels.data(),
-	                                 static_cast<int>(local::cull_mode_labels.size()));
+		local::cull_mode_labels.data(),
+		static_cast<int>(local::cull_mode_labels.size()));
 	cull_mode = static_cast<cull_mode_t>(cull_mode_index);
 	return was_modified;
 }
@@ -601,17 +657,17 @@ void
 bonobo::changeCullMode(enum cull_mode_t const cull_mode) noexcept
 {
 	switch (cull_mode) {
-		case bonobo::cull_mode_t::disabled:
-			glDisable(GL_CULL_FACE);
-			break;
-		case bonobo::cull_mode_t::back_faces:
-			glEnable(GL_CULL_FACE);
-			glCullFace(GL_BACK);
-			break;
-		case bonobo::cull_mode_t::front_faces:
-			glEnable(GL_CULL_FACE);
-			glCullFace(GL_FRONT);
-			break;
+	case bonobo::cull_mode_t::disabled:
+		glDisable(GL_CULL_FACE);
+		break;
+	case bonobo::cull_mode_t::back_faces:
+		glEnable(GL_CULL_FACE);
+		glCullFace(GL_BACK);
+		break;
+	case bonobo::cull_mode_t::front_faces:
+		glEnable(GL_CULL_FACE);
+		glCullFace(GL_FRONT);
+		break;
 	}
 }
 
@@ -620,8 +676,8 @@ bonobo::uiSelectPolygonMode(std::string const& label, enum polygon_mode_t& polyg
 {
 	auto polygon_mode_index = static_cast<int>(polygon_mode);
 	bool was_modified = ImGui::Combo(label.c_str(), &polygon_mode_index,
-	                                 local::polygon_mode_labels.data(),
-	                                 static_cast<int>(local::polygon_mode_labels.size()));
+		local::polygon_mode_labels.data(),
+		static_cast<int>(local::polygon_mode_labels.size()));
 	polygon_mode = static_cast<polygon_mode_t>(polygon_mode_index);
 	return was_modified;
 }
@@ -630,15 +686,15 @@ void
 bonobo::changePolygonMode(enum polygon_mode_t const polygon_mode) noexcept
 {
 	switch (polygon_mode) {
-		case bonobo::polygon_mode_t::fill:
-			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-			break;
-		case bonobo::polygon_mode_t::line:
-			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-			break;
-		case bonobo::polygon_mode_t::point:
-			glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
-			break;
+	case bonobo::polygon_mode_t::fill:
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		break;
+	case bonobo::polygon_mode_t::line:
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		break;
+	case bonobo::polygon_mode_t::point:
+		glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
+		break;
 	}
 }
 
@@ -664,11 +720,11 @@ namespace
 			glm::vec3(1.0f,  halfThickness,  halfThickness),
 			glm::vec3(1.0f,  halfThickness, -halfThickness),
 			// Tip of the arrow
-			glm::vec3(1.0f, -2.0f*halfThickness, -2.0f*halfThickness),
-			glm::vec3(1.0f, -2.0f*halfThickness,  2.0f*halfThickness),
-			glm::vec3(1.0f,  2.0f*halfThickness,  2.0f*halfThickness),
-			glm::vec3(1.0f,  2.0f*halfThickness, -2.0f*halfThickness),
-			glm::vec3(1.0f+4.0f*halfThickness,  0.0f, 0.0f),
+			glm::vec3(1.0f, -2.0f * halfThickness, -2.0f * halfThickness),
+			glm::vec3(1.0f, -2.0f * halfThickness,  2.0f * halfThickness),
+			glm::vec3(1.0f,  2.0f * halfThickness,  2.0f * halfThickness),
+			glm::vec3(1.0f,  2.0f * halfThickness, -2.0f * halfThickness),
+			glm::vec3(1.0f + 4.0f * halfThickness,  0.0f, 0.0f),
 		};
 		glBindBuffer(GL_ARRAY_BUFFER, basis.vbo);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices.data(), GL_STATIC_DRAW);

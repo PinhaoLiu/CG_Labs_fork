@@ -20,11 +20,11 @@
 
 edaf80::Assignment2::Assignment2(WindowManager& windowManager) :
 	mCamera(0.5f * glm::half_pi<float>(),
-	        static_cast<float>(config::resolution_x) / static_cast<float>(config::resolution_y),
-	        0.01f, 1000.0f),
+		static_cast<float>(config::resolution_x) / static_cast<float>(config::resolution_y),
+		0.01f, 1000.0f),
 	inputHandler(), mWindowManager(windowManager), window(nullptr)
 {
-	WindowManager::WindowDatum window_datum{ inputHandler, mCamera, config::resolution_x, config::resolution_y, 0, 0, 0, 0};
+	WindowManager::WindowDatum window_datum{ inputHandler, mCamera, config::resolution_x, config::resolution_y, 0, 0, 0, 0 };
 
 	window = mWindowManager.CreateGLFWWindow("EDAF80: Assignment 2", window_datum, config::msaa_rate);
 	if (window == nullptr) {
@@ -43,12 +43,16 @@ void
 edaf80::Assignment2::run()
 {
 	// Load the sphere geometry
-	auto const shape = parametric_shapes::createCircleRing(2.0f, 0.75f, 40u, 4u);
+	// auto const shape = parametric_shapes::createCircleRing(2.0f, 0.75f, 40u, 4u);
+	// auto const shape = parametric_shapes::createQuad(0.25f, 0.15f);
+	// auto const shape = parametric_shapes::createSphere(0.15f, 10u, 10u);
+	auto const shape = parametric_shapes::createTorus(0.15f, 0.05f, 10u, 10u);
 	if (shape.vao == 0u)
 		return;
 
 	// Set up the camera
 	mCamera.mWorld.SetTranslate(glm::vec3(0.0f, 1.0f, 9.0f));
+	// mCamera.mWorld.SetTranslate(glm::vec3(0.0f, 0.0f, 0.5f));
 	mCamera.mMouseSensitivity = glm::vec2(0.003f);
 	mCamera.mMovementSpeed = glm::vec3(3.0f); // 3 m/s => 10.8 km/h
 
@@ -56,9 +60,9 @@ edaf80::Assignment2::run()
 	ShaderProgramManager program_manager;
 	GLuint fallback_shader = 0u;
 	program_manager.CreateAndRegisterProgram("Fallback",
-	                                         { { ShaderType::vertex, "common/fallback.vert" },
-	                                           { ShaderType::fragment, "common/fallback.frag" } },
-	                                         fallback_shader);
+		{ { ShaderType::vertex, "common/fallback.vert" },
+		  { ShaderType::fragment, "common/fallback.frag" } },
+		fallback_shader);
 	if (fallback_shader == 0u) {
 		LogError("Failed to load fallback shader");
 		return;
@@ -66,48 +70,48 @@ edaf80::Assignment2::run()
 
 	GLuint diffuse_shader = 0u;
 	program_manager.CreateAndRegisterProgram("Diffuse",
-	                                         { { ShaderType::vertex, "EDAF80/diffuse.vert" },
-	                                           { ShaderType::fragment, "EDAF80/diffuse.frag" } },
-	                                         diffuse_shader);
+		{ { ShaderType::vertex, "EDAF80/diffuse.vert" },
+		  { ShaderType::fragment, "EDAF80/diffuse.frag" } },
+		diffuse_shader);
 	if (diffuse_shader == 0u)
 		LogError("Failed to load diffuse shader");
 
 	GLuint normal_shader = 0u;
 	program_manager.CreateAndRegisterProgram("Normal",
-	                                         { { ShaderType::vertex, "EDAF80/normal.vert" },
-	                                           { ShaderType::fragment, "EDAF80/normal.frag" } },
-	                                         normal_shader);
+		{ { ShaderType::vertex, "EDAF80/normal.vert" },
+		  { ShaderType::fragment, "EDAF80/normal.frag" } },
+		normal_shader);
 	if (normal_shader == 0u)
 		LogError("Failed to load normal shader");
 
 	GLuint tangent_shader = 0u;
 	program_manager.CreateAndRegisterProgram("Tangent",
-	                                         { { ShaderType::vertex, "EDAF80/tangent.vert" },
-	                                           { ShaderType::fragment, "EDAF80/tangent.frag" } },
-	                                         tangent_shader);
+		{ { ShaderType::vertex, "EDAF80/tangent.vert" },
+		  { ShaderType::fragment, "EDAF80/tangent.frag" } },
+		tangent_shader);
 	if (tangent_shader == 0u)
 		LogError("Failed to load tangent shader");
 
 	GLuint binormal_shader = 0u;
 	program_manager.CreateAndRegisterProgram("Bitangent",
-	                                         { { ShaderType::vertex, "EDAF80/binormal.vert" },
-	                                           { ShaderType::fragment, "EDAF80/binormal.frag" } },
-	                                         binormal_shader);
+		{ { ShaderType::vertex, "EDAF80/binormal.vert" },
+		  { ShaderType::fragment, "EDAF80/binormal.frag" } },
+		binormal_shader);
 	if (binormal_shader == 0u)
 		LogError("Failed to load binormal shader");
 
 	GLuint texcoord_shader = 0u;
 	program_manager.CreateAndRegisterProgram("Texture coords",
-	                                         { { ShaderType::vertex, "EDAF80/texcoord.vert" },
-	                                           { ShaderType::fragment, "EDAF80/texcoord.frag" } },
-	                                         texcoord_shader);
+		{ { ShaderType::vertex, "EDAF80/texcoord.vert" },
+		  { ShaderType::fragment, "EDAF80/texcoord.frag" } },
+		texcoord_shader);
 	if (texcoord_shader == 0u)
 		LogError("Failed to load texcoord shader");
 
 	auto const light_position = glm::vec3(-2.0f, 4.0f, 2.0f);
-	auto const set_uniforms = [&light_position](GLuint program){
+	auto const set_uniforms = [&light_position](GLuint program) {
 		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
-	};
+		};
 
 	// Set the default tensions value; it can always be changed at runtime
 	// through the "Scene Controls" window.
@@ -119,7 +123,7 @@ edaf80::Assignment2::run()
 
 	// Set whether to interpolate the position of an object or not; it can
 	// always be changed at runtime through the "Scene Controls" window.
-	bool interpolate = true;
+	bool interpolate = false;
 
 	// Set whether to show the control points or not; it can always be changed
 	// at runtime through the "Scene Controls" window.
@@ -141,11 +145,11 @@ edaf80::Assignment2::run()
 
 	auto const control_point_sphere = parametric_shapes::createSphere(0.1f, 10u, 10u);
 	std::array<glm::vec3, 9> control_point_locations = {
-		glm::vec3( 0.0f,  0.0f,  0.0f),
-		glm::vec3( 1.0f,  1.8f,  1.0f),
-		glm::vec3( 2.0f,  1.2f,  2.0f),
-		glm::vec3( 3.0f,  3.0f,  3.0f),
-		glm::vec3( 3.0f,  0.0f,  3.0f),
+		glm::vec3(0.0f,  0.0f,  0.0f),
+		glm::vec3(1.0f,  1.8f,  1.0f),
+		glm::vec3(2.0f,  1.2f,  2.0f),
+		glm::vec3(3.0f,  3.0f,  3.0f),
+		glm::vec3(3.0f,  0.0f,  3.0f),
 		glm::vec3(-2.0f, -1.0f,  3.0f),
 		glm::vec3(-3.0f, -3.0f, -3.0f),
 		glm::vec3(-2.0f, -1.2f, -2.0f),
@@ -216,16 +220,54 @@ edaf80::Assignment2::run()
 		if (interpolate) {
 			//! \todo Interpolate the movement of a shape between various
 			//!        control points.
+
+			static float p = 0.0f;
+			float d_p = 0.0025f;
+			int nb_control_points = control_point_locations.size();
+
+			int index = static_cast<int>(p);
+			float x = p - index;
+
+			glm::vec3 newPosition;
+
 			if (use_linear) {
 				//! \todo Compute the interpolated position
 				//!       using the linear interpolation.
+
+				newPosition = interpolation::evalLERP(control_point_locations[index % nb_control_points],
+					control_point_locations[(index + 1) % nb_control_points],
+					x);
 			}
 			else {
 				//! \todo Compute the interpolated position
 				//!       using the Catmull-Rom interpolation;
 				//!       use the `catmull_rom_tension`
 				//!       variable as your tension argument.
+				newPosition = interpolation::evalCatmullRom(control_point_locations[(index == 0 ? 0 : index - 1) % nb_control_points],
+					control_point_locations[index % nb_control_points],
+					control_point_locations[(index + 1) % nb_control_points],
+					control_point_locations[(index + 2) % nb_control_points],
+					catmull_rom_tension,
+					x);
 			}
+
+			// make torus facing towards
+			glm::vec3 currentPosition = circle_rings.get_transform().GetTranslation();
+			glm::vec3 front_vec = glm::normalize(newPosition - currentPosition);
+			glm::vec3 y(0.0f, 1.0f, 0.0f);
+			if (glm::dot(front_vec, y) > 0.9999f)
+			{
+				circle_rings.get_transform().SetRotate(0.0f, glm::vec3(1.0f));
+			}
+			else
+			{
+				glm::vec3 right = glm::cross(front_vec, y);
+				float angle = glm::acos(glm::dot(front_vec, y));
+				circle_rings.get_transform().SetRotate(-angle, right);
+			}
+
+			circle_rings.get_transform().SetTranslate(newPosition);
+			p += d_p;
 		}
 
 		circle_rings.render(mCamera.GetWorldToClipMatrix());
@@ -278,7 +320,8 @@ int main()
 	try {
 		edaf80::Assignment2 assignment2(framework.GetWindowManager());
 		assignment2.run();
-	} catch (std::runtime_error const& e) {
+	}
+	catch (std::runtime_error const& e) {
 		LogError(e.what());
 	}
 }

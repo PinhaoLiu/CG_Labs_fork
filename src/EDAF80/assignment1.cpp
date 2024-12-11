@@ -11,6 +11,7 @@
 
 #include <clocale>
 #include <cstdlib>
+#include <stack>
 
 
 int main()
@@ -29,9 +30,9 @@ int main()
 	//
 	InputHandler input_handler;
 	FPSCameraf camera(0.5f * glm::half_pi<float>(),
-	                  static_cast<float>(config::resolution_x) / static_cast<float>(config::resolution_y),
-	                  0.01f, 1000.0f);
-	camera.mWorld.SetTranslate(glm::vec3(0.0f, 0.0f, 6.0f));
+		static_cast<float>(config::resolution_x) / static_cast<float>(config::resolution_y),
+		0.01f, 1000.0f);
+	camera.mWorld.SetTranslate(glm::vec3(0.0f, 4.0f, 20.0f));
 	camera.mWorld.LookAt(glm::vec3(0.0f));
 	camera.mMouseSensitivity = glm::vec2(0.003f);
 	camera.mMovementSpeed = glm::vec3(3.0f); // 3 m/s => 10.8 km/h
@@ -40,7 +41,7 @@ int main()
 	// Create the window
 	//
 	WindowManager& window_manager = framework.GetWindowManager();
-	WindowManager::WindowDatum window_datum{ input_handler, camera, config::resolution_x, config::resolution_y, 0, 0, 0, 0};
+	WindowManager::WindowDatum window_datum{ input_handler, camera, config::resolution_x, config::resolution_y, 0, 0, 0, 0 };
 	GLFWwindow* window = window_manager.CreateGLFWWindow("EDAF80: Assignment 1", window_datum, config::msaa_rate);
 	if (window == nullptr) {
 		LogError("Failed to get a window: exiting.");
@@ -71,9 +72,9 @@ int main()
 	ShaderProgramManager program_manager;
 	GLuint celestial_body_shader = 0u;
 	program_manager.CreateAndRegisterProgram("Celestial Body",
-	                                         { { ShaderType::vertex, "EDAF80/default.vert" },
-	                                           { ShaderType::fragment, "EDAF80/default.frag" } },
-	                                         celestial_body_shader);
+		{ { ShaderType::vertex, "EDAF80/default.vert" },
+		  { ShaderType::fragment, "EDAF80/default.frag" } },
+		celestial_body_shader);
 	if (celestial_body_shader == 0u) {
 		LogError("Failed to generate the “Celestial Body” shader program: exiting.");
 
@@ -83,9 +84,9 @@ int main()
 	}
 	GLuint celestial_ring_shader = 0u;
 	program_manager.CreateAndRegisterProgram("Celestial Ring",
-	                                         { { ShaderType::vertex, "EDAF80/celestial_ring.vert" },
-	                                           { ShaderType::fragment, "EDAF80/celestial_ring.frag" } },
-	                                         celestial_ring_shader);
+		{ { ShaderType::vertex, "EDAF80/celestial_ring.vert" },
+		  { ShaderType::fragment, "EDAF80/celestial_ring.frag" } },
+		celestial_ring_shader);
 	if (celestial_ring_shader == 0u) {
 		LogError("Failed to generate the “Celestial Ring” shader program: exiting.");
 
@@ -158,15 +159,82 @@ int main()
 	//
 	// Set up the celestial bodies.
 	//
+	CelestialBody sun(sphere, &celestial_body_shader, sun_texture);
+	sun.set_scale(sun_scale);
+	sun.set_spin(sun_spin);
+
+	CelestialBody mercury(sphere, &celestial_body_shader, mercury_texture);
+	mercury.set_scale(mercury_scale);
+	mercury.set_spin(mercury_spin);
+	mercury.set_orbit(mercury_orbit);
+	sun.add_child(&mercury);
+
+	CelestialBody venus(sphere, &celestial_body_shader, venus_texture);
+	venus.set_scale(venus_scale);
+	venus.set_spin(venus_spin);
+	venus.set_orbit(venus_orbit);
+	sun.add_child(&venus);
+
+	CelestialBody earth(sphere, &celestial_body_shader, earth_texture);
+	earth.set_scale(earth_scale);
+	earth.set_spin(earth_spin);
+	earth.set_orbit(earth_orbit);
+	sun.add_child(&earth);
+
 	CelestialBody moon(sphere, &celestial_body_shader, moon_texture);
+	moon.set_scale(moon_scale);
+	moon.set_spin(moon_spin);
+	moon.set_orbit(moon_orbit);
+	earth.add_child(&moon);
+
+	CelestialBody mars(sphere, &celestial_body_shader, mars_texture);
+	mars.set_scale(mars_scale);
+	mars.set_spin(mars_spin);
+	mars.set_orbit(mars_orbit);
+	sun.add_child(&mars);
+
+	CelestialBody jupiter(sphere, &celestial_body_shader, jupiter_texture);
+	jupiter.set_scale(jupiter_scale);
+	jupiter.set_spin(jupiter_spin);
+	jupiter.set_orbit(jupiter_orbit);
+	sun.add_child(&jupiter);
+
+	CelestialBody saturn(sphere, &celestial_body_shader, saturn_texture);
+	saturn.set_scale(saturn_scale);
+	saturn.set_spin(saturn_spin);
+	saturn.set_orbit(saturn_orbit);
+	sun.add_child(&saturn);
+
+	saturn.set_ring(
+		saturn_ring_shape,
+		&celestial_ring_shader,
+		saturn_ring_texture,
+		saturn_ring_scale
+	);
+
+	CelestialBody uranus(sphere, &celestial_body_shader, uranus_texture);
+	uranus.set_scale(uranus_scale);
+	uranus.set_spin(uranus_spin);
+	uranus.set_orbit(uranus_orbit);
+	sun.add_child(&uranus);
+
+	CelestialBody neptune(sphere, &celestial_body_shader, neptune_texture);
+	neptune.set_scale(neptune_scale);
+	neptune.set_spin(neptune_spin);
+	neptune.set_orbit(neptune_orbit);
+	sun.add_child(&neptune);
+
+	/*CelestialBody moon(sphere, &celestial_body_shader, moon_texture);
 	moon.set_scale(glm::vec3(0.3f));
 	moon.set_spin(moon_spin);
-	moon.set_orbit({1.5f, glm::radians(-66.0f), glm::two_pi<float>() / 1.3f});
+	moon.set_orbit({ 1.5f, glm::radians(-66.0f), glm::two_pi<float>() / 1.3f });
 
 	CelestialBody earth(sphere, &celestial_body_shader, earth_texture);
 	earth.set_spin(earth_spin);
-	earth.set_orbit({-2.5f, glm::radians(45.0f), glm::two_pi<float>() / 10.0f});
-	earth.add_child(&moon);
+	earth.set_orbit({ -2.5f, glm::radians(45.0f), glm::two_pi<float>() / 10.0f });
+	earth.add_child(&moon);*/
+	// Exercise 1:
+	// earth.set_scale(glm::vec3(1.0f, 0.2f, 0.2f));
 
 
 	//
@@ -249,8 +317,38 @@ int main()
 		// TODO: Replace this explicit rendering of the Earth and Moon
 		// with a traversal of the scene graph and rendering of all its
 		// nodes.
-		earth.render(animation_delta_time_us, camera.GetWorldToClipMatrix(), glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 0.0f, 0.0f)), show_basis);
-		//moon.render(animation_delta_time_us, camera.GetWorldToClipMatrix(), glm::mat4(1.0f), show_basis);
+		{
+			// Iterative approach.
+			auto s = new std::stack<CelestialBodyRef>(); // create a stack
+			s->push({ &sun, glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 0.0f, 0.0f)) }); // initialize the first element
+
+			// while the stack not empty
+			while (!s->empty())
+			{
+				auto current = s->top(); // take the first element from stack
+				s->pop(); // delete the first element from stack
+
+				auto body = current.body; // celestial body
+				auto pt = current.parent_transform; // parent transform
+
+				// render celestial body
+				auto transform = body->render(
+					animation_delta_time_us,
+					camera.GetWorldToClipMatrix(),
+					pt,
+					show_basis
+				);
+
+				// add current celestial body's all children into stack
+				for (auto iter : body->get_children())
+					s->push({ iter, transform });
+			}
+
+			delete s;
+			s = nullptr;
+		}
+		// earth.render(animation_delta_time_us, camera.GetWorldToClipMatrix(), glm::translate(glm::mat4(1.0f), glm::vec3(2.0f, 0.0f, 0.0f)), show_basis);
+		// moon.render(animation_delta_time_us, camera.GetWorldToClipMatrix(), glm::mat4(1.0f), show_basis);
 
 
 		//

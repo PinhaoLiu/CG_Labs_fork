@@ -20,8 +20,27 @@ namespace parametric_shapes
 	//! @return wrapper around OpenGL objects' name containing the geometry
 	//!         data
 	bonobo::mesh_data createQuad(float const width, float const height,
-	                             unsigned int const horizontal_split_count = 0u,
-	                             unsigned int const vertical_split_count = 0u);
+		unsigned int const horizontal_split_count = 0u,
+		unsigned int const vertical_split_count = 0u);
+
+	//! \brief Creat a (water wave) quad for a given tesselation level and make it
+	//!		   available to OpenGL.
+	//!
+	//! @param width the width of the quad
+	//! @param height the height of quad
+	//! @param horizontal_split_count the number of times horizontal edges
+	//!								  should be split: 0 means each horizontal
+	//!								  line consist of a single edge, 1 gives
+	//!								  you two edges, and so on.
+	//! @param vertical_split_count the number of times vertical edges
+	//!								should be split: 0 means each vertical
+	//!								line consist of a single edge, 1 gives
+	//!								you two edges, and so on.
+	//! @return wrapper around OpenGL objects' name containing the geometry
+	//!			data
+	bonobo::mesh_data createQuadWaterWave(float const width, float const height,
+		unsigned int const horizontal_split_count = 0u,
+		unsigned int const vertical_split_count = 0u);
 
 	//! \brief Create a sphere for a given tesselation level and make it
 	//!        available to OpenGL.
@@ -43,8 +62,8 @@ namespace parametric_shapes
 	//! @return wrapper around OpenGL objects' name containing the geometry
 	//!         data
 	bonobo::mesh_data createSphere(float const radius,
-	                               unsigned int const longitude_split_count,
-	                               unsigned int const latitude_split_count);
+		unsigned int const longitude_split_count,
+		unsigned int const latitude_split_count);
 
 	//! \brief Create a torus for a given tesselation level and make it
 	//!        available to OpenGL.
@@ -70,9 +89,9 @@ namespace parametric_shapes
 	//! @return wrapper around OpenGL objects' name containing the geometry
 	//!         data
 	bonobo::mesh_data createTorus(float const major_radius,
-	                              float const minor_radius,
-	                              unsigned int const major_split_count,
-	                              unsigned int const minor_split_count);
+		float const minor_radius,
+		unsigned int const major_split_count,
+		unsigned int const minor_split_count);
 
 	//! \brief Create a circle ring for a given tesselation level and make it
 	//!        available to OpenGL.
@@ -96,7 +115,7 @@ namespace parametric_shapes
 	//! @return wrapper around OpenGL objects' name containing the geometry
 	//!         data
 	bonobo::mesh_data createCircleRing(float const radius,
-	                                   float const spread_length,
-	                                   unsigned int const circle_split_count,
-	                                   unsigned int const spread_split_count);
+		float const spread_length,
+		unsigned int const circle_split_count,
+		unsigned int const spread_split_count);
 }
