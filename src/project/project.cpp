@@ -52,8 +52,11 @@ edan35::Project::run()
 	constexpr int pointCounts = 100 * 100 * 100;
 
 	FluidSystem fluidSystem;
+	/*fluidSystem.init(pointCounts, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(100.0f, 100.0f, 100.0f),
+		glm::vec3(75.0f, 0.0f, 0.0f), glm::vec3(100.0f, 100.0f, 25.0f), glm::vec3(0.0f, -9.8f, 0.0f));*/
+
 	fluidSystem.init(pointCounts, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(50.0f, 50.0f, 50.0f),
-		glm::vec3(30.0f, 0.0f, 0.0f), glm::vec3(50.0f, 50.0f, 20.0f), glm::vec3(0.0f, -9.8f, 0.0f));
+		glm::vec3(25.0f, 0.0f, 0.0f), glm::vec3(50.0f, 50.0f, 25.0f), glm::vec3(0.0f, -9.8f, 0.0f));
 
 	// Set up the camera
 	mCamera.mWorld.SetTranslate(glm::vec3(-50.0f, 20.0f, 50.0f));
@@ -73,28 +76,58 @@ edan35::Project::run()
 		return;
 	}
 
+	GLuint skybox_shader = 0u;
+	program_manager.CreateAndRegisterProgram("Skybox",
+		{ {	ShaderType::vertex, "EDAF80/skybox.vert" },
+		  { ShaderType::fragment, "EDAF80/skybox.frag" } },
+		skybox_shader);
+
+	if (skybox_shader == 0u)
+		LogError("Failed to load skybox shader");
+
+	auto light_position = glm::vec3(-2.0f, 4.0f, 2.0f);
+	auto const set_uniforms = [&light_position](GLuint program) {
+		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
+		};
+
+	auto skybox_shape = parametric_shapes::createSphere(20.0f, 100u, 100u);
+	if (skybox_shape.vao == 0u) {
+		LogError("Failed to retrieve the mesh for the skybox");
+		return;
+	}
+
+	GLuint cubeMap = bonobo::loadTextureCubeMap(
+		config::resources_path("cubemaps/NissiBeach2/posx.jpg"),
+		config::resources_path("cubemaps/NissiBeach2/negx.jpg"),
+		config::resources_path("cubemaps/NissiBeach2/posy.jpg"),
+		config::resources_path("cubemaps/NissiBeach2/negy.jpg"),
+		config::resources_path("cubemaps/NissiBeach2/posz.jpg"),
+		config::resources_path("cubemaps/NissiBeach2/negz.jpg")
+	);
+
+	Node skybox;
+	skybox.set_geometry(skybox_shape);
+	skybox.set_program(&skybox_shader, set_uniforms);
+	skybox.add_texture("cubemap", cubeMap, GL_TEXTURE_CUBE_MAP);
+
+
 	// Create particles
-	auto const shape = parametric_shapes::createSphere(0.5f, 10u, 10u);
+	auto const shape = parametric_shapes::createSphere(0.7f, 6u, 6u);
 	if (shape.vao == 0u)
 		return;
 
-	auto points = fluidSystem.getPointBuf();
 	auto point_counts = fluidSystem.getPointCounts(); std::cout << point_counts << '\n';
-	auto velocity = new glm::vec3[point_counts];
-	auto position = new glm::vec3[point_counts];
-	for (int i = 0; i < point_counts; i++) {
-		velocity[i] = points[i].velocity;
-		position[i] = points[i].pos;
-
-	}
-
+	auto points = fluidSystem.getPointBuf();
 	
-
-
 	auto nodes = new Node[point_counts]();
 	for (int i = 0; i < point_counts; i++) {
+		auto& velocity = points[i].velocity;
+		auto const set_shader_uniforms = [&velocity](GLuint program) {
+			glUniform3fv(glGetUniformLocation(program, "velocity"), 1, glm::value_ptr(velocity));
+			};
+
 		nodes[i].set_geometry(shape);
-		nodes[i].set_program(&shader);
+		nodes[i].set_program(&shader, set_shader_uniforms);
 		auto point = fluidSystem.getPointBuf() + i;
 		auto pos = point->pos;
 		nodes[i].get_transform().SetTranslate(pos);
@@ -120,7 +153,7 @@ edan35::Project::run()
 
 	changeCullMode(cull_mode);
 
-
+	bool start = false;
 
 	while (!glfwWindowShouldClose(window)) {
 		auto const nowTime = std::chrono::high_resolution_clock::now();
@@ -168,8 +201,14 @@ edan35::Project::run()
 		glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 		bonobo::changePolygonMode(polygon_mode);
 
+		skybox.get_transform().SetTranslate(mCamera.mWorld.GetTranslation());
+		glDisable(GL_DEPTH_TEST);
+		skybox.render(mCamera.GetWorldToClipMatrix());
+		glEnable(GL_DEPTH_TEST);
+
 		//
-		fluidSystem.tick();
+		if (start)
+			fluidSystem.tick();
 
 		for (int i = 0; i < point_counts; i++) {
 			auto point = fluidSystem.getPointBuf() + i;
@@ -184,9 +223,7 @@ edan35::Project::run()
 
 			// Select polygon mode.
 			bonobo::uiSelectPolygonMode("Polygon mode", polygon_mode);
-
-			// Separator
-			ImGui::Separator();
+			ImGui::Checkbox("Start animation", &start);
 		}
 
 		ImGui::End();
