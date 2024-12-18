@@ -59,22 +59,18 @@ edan35::Project::run()
 		glm::vec3(25.0f, 0.0f, 0.0f), glm::vec3(50.0f, 50.0f, 25.0f), glm::vec3(0.0f, -9.8f, 0.0f));
 
 	// Set up the camera
-	mCamera.mWorld.SetTranslate(glm::vec3(-50.0f, 20.0f, 50.0f));
-	mCamera.mWorld.LookTowards(glm::vec3(1.0f, 0.0f, .0f));
+	mCamera.mWorld.SetTranslate(glm::vec3(-50.0f, 40.0f, 50.0f));
+	mCamera.mWorld.LookTowards(glm::vec3(1.0f, 0.0f, 0.0f));
 	mCamera.mMouseSensitivity = glm::vec2(0.003f);
 	mCamera.mMovementSpeed = glm::vec3(3.0f);	// 3 m/s => 10.8 km/h
 
 	// particle-based water shader
 	ShaderProgramManager program_manager;
-	GLuint shader = 0u;
-	program_manager.CreateAndRegisterProgram("water",
-		{ { ShaderType::vertex, "project/shader.vert" },
-		  { ShaderType::fragment, "project/shader.frag" } },
-		shader);
-	if (shader == 0u) {
-		LogError("Failed to load particle-based water shader");
-		return;
-	}
+	GLuint phong_shader = 0u;
+	program_manager.CreateAndRegisterProgram("phong",
+		{ { ShaderType::vertex, "project/phong.vert"},
+		  { ShaderType::fragment, "project/phong.frag" } },
+		phong_shader);
 
 	GLuint skybox_shader = 0u;
 	program_manager.CreateAndRegisterProgram("Skybox",
@@ -85,7 +81,7 @@ edan35::Project::run()
 	if (skybox_shader == 0u)
 		LogError("Failed to load skybox shader");
 
-	auto light_position = glm::vec3(-2.0f, 4.0f, 2.0f);
+	auto light_position = glm::vec3(-100.0f, 100.0f, 100.0f);
 	auto const set_uniforms = [&light_position](GLuint program) {
 		glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
 		};
@@ -112,22 +108,34 @@ edan35::Project::run()
 
 
 	// Create particles
-	auto const shape = parametric_shapes::createSphere(0.7f, 6u, 6u);
+	auto const shape = parametric_shapes::createSphere(0.8f, 2u, 2u);
 	if (shape.vao == 0u)
 		return;
 
 	auto point_counts = fluidSystem.getPointCounts(); std::cout << point_counts << '\n';
 	auto points = fluidSystem.getPointBuf();
 	
+	auto camera_position = mCamera.mWorld.GetTranslation();
+
+	bonobo::material_data demo_material;
+	demo_material.ambient = glm::vec3(0.2f, 0.2f, 0.2f);
+	demo_material.diffuse = glm::vec3(0.4f, 0.4f, 0.4f);
+	demo_material.specular = glm::vec3(1.0f, 1.0f, 1.0f);
+	demo_material.shininess = 10.0f;
+
 	auto nodes = new Node[point_counts]();
 	for (int i = 0; i < point_counts; i++) {
 		auto& velocity = points[i].velocity;
-		auto const set_shader_uniforms = [&velocity](GLuint program) {
+
+		auto const phong_set_uniforms = [&light_position, &camera_position, &velocity](GLuint program) {
+			glUniform3fv(glGetUniformLocation(program, "light_position"), 1, glm::value_ptr(light_position));
+			glUniform3fv(glGetUniformLocation(program, "camera_position"), 1, glm::value_ptr(camera_position));
 			glUniform3fv(glGetUniformLocation(program, "velocity"), 1, glm::value_ptr(velocity));
 			};
 
 		nodes[i].set_geometry(shape);
-		nodes[i].set_program(&shader, set_shader_uniforms);
+		nodes[i].set_material_constants(demo_material);
+		nodes[i].set_program(&phong_shader, phong_set_uniforms);
 		auto point = fluidSystem.getPointBuf() + i;
 		auto pos = point->pos;
 		nodes[i].get_transform().SetTranslate(pos);
@@ -143,13 +151,9 @@ edan35::Project::run()
 
 	std::int32_t program_index = 0;
 	float elapsed_time_s = 0.0f;
-	auto cull_mode = bonobo::cull_mode_t::disabled;
-	auto polygon_mode = bonobo::polygon_mode_t::fill;
-	bool show_logs = true;
+	auto cull_mode = bonobo::cull_mode_t::front_faces;
+	auto polygon_mode = bonobo::polygon_mode_t::line;
 	bool show_gui = true;
-	bool show_basis = false;
-	float basis_thickness_scale = 1.0f;
-	float basis_length_scale = 1.0f;
 
 	changeCullMode(cull_mode);
 
@@ -175,10 +179,6 @@ edan35::Project::run()
 		if (inputHandler.GetKeycodeState(GLFW_KEY_F2) & JUST_RELEASED)
 			show_gui = !show_gui;
 
-		// F3: show or hide log
-		if (inputHandler.GetKeycodeState(GLFW_KEY_F3) & JUST_RELEASED)
-			show_logs = !show_logs;
-
 		// F11: toggle full screen status for window or not
 		if (inputHandler.GetKeycodeState(GLFW_KEY_F11) & JUST_RELEASED)
 			mWindowManager.ToggleFullscreenStatusForWindow(window);
@@ -199,12 +199,17 @@ edan35::Project::run()
 		mWindowManager.NewImGuiFrame();
 
 		glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
-		bonobo::changePolygonMode(polygon_mode);
+
+		bonobo::changePolygonMode(bonobo::polygon_mode_t::fill);
+		changeCullMode(bonobo::cull_mode_t::disabled);
 
 		skybox.get_transform().SetTranslate(mCamera.mWorld.GetTranslation());
 		glDisable(GL_DEPTH_TEST);
 		skybox.render(mCamera.GetWorldToClipMatrix());
 		glEnable(GL_DEPTH_TEST);
+
+		bonobo::changePolygonMode(polygon_mode);
+		changeCullMode(cull_mode);
 
 		//
 		if (start)
@@ -229,10 +234,6 @@ edan35::Project::run()
 		ImGui::End();
 
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		if (show_basis)
-			bonobo::renderBasis(basis_thickness_scale, basis_length_scale, mCamera.GetWorldToClipMatrix());
-		if (show_logs)
-			Log::View::Render();
 		mWindowManager.RenderImGuiFrame(show_gui);
 
 		glfwSwapBuffers(window);
